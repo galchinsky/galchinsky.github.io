@@ -1,1 +1,11 @@
-theme1: jekyll-theme-minimal
+title: galchinsky.github.io
+
+author: Dmitry Galchinsky
+
+
+social-network-links:
+  twitter: respecttox
+  
+plugins:
+  - jekyll-paginate
+  - jekyll-sitemap
