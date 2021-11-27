@@ -267,6 +267,7 @@ plt.imshow(f)
 plt.show()
 ```
 
+![Оригинальный енот](https://user-images.githubusercontent.com/2237541/143664574-98590c14-b7ef-4e88-a0ea-25d840465a13.png)
 ![Енот с моушен блюром](https://user-images.githubusercontent.com/2237541/143664359-2ff85146-6284-425b-8dee-aa43517c14ce.png)
 
 Картинка съехала и образовалась черная полоса. Чтобы это замаскировать, если центрировать кернел не вариант, можно указать boundary='symm'.
