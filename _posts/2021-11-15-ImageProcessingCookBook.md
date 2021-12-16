@@ -273,3 +273,65 @@ plt.show()
 Картинка съехала и образовалась черная полоса. Чтобы это замаскировать, если центрировать кернел не вариант, можно указать boundary='symm'.
 
 Если результирующие точки разные - все сложнее, но подход тот же. Нужно скормить гимпу сетку точек, выделить из размытого файла ядра, и дальше интерполировать между разными ядрами при применении свертки.
+
+## Повышение резкости
+
+Размытие убирает высокие частоты, оставляя низкие. А значит, разность между оригинальным изображением и размытием даст, наоборот, только высокие частоты. Если сложить их с оригиналом, получим эффект увеличения резкости. Называется это unsharp mask и применялось еще с пленочной фотографией. Он есть в scikit-image:
+
+```python
+sharpened_image = skimage.filters.unsharp_mask(input, radius=3, amount=0.5)
+```
+
+Внутри он устроен, как описано выше: размываем, находим разность, складываем  с оригиналом:
+
+```python
+filtered_image = scipy.ndimage.gaussian_filter(input, radius)
+sharpened_image = input + amount*(input - filtered_image)
+```
+
+В фоторедакторах есть еще один этап: там, где изображение малоконтрастно, оставляем оригинал, комбинируя с помощью маски по рецепту из раздела Select. Это позволяет не вытягивать шумы, ведь шум - это что-то с небольшой энергией, создающее высокочастотную рябь.
+
+```python
+mask = np.absolute(input - sharpened_image) > threshold
+sharpened_with_threshold = input * (1 - mask) + sharpened_image * mask
+```
+
+`input` и `sharpened_image`:
+
+![Оригинальный енот](https://user-images.githubusercontent.com/2237541/146315152-f45bf9b3-97c6-4426-abe9-52c73a7d4e60.png) ![Енот с повышенной резкостью](https://user-images.githubusercontent.com/2237541/146320104-0b1ff721-2369-44e1-ba93-57d95cdf66f4.png)
+
+`mask` и `sharpened_with_threshold`:
+
+![Маска резкости](https://user-images.githubusercontent.com/2237541/146315269-3b16006a-2323-4903-9b29-8f0a6a2860ff.png) ![Енот с повышенной резкостью и маской](https://user-images.githubusercontent.com/2237541/146320204-70765fff-49ab-4339-a93f-9f0000c8b2ef.png)
+
+Примеры сгенерированы этим скриптом:
+
+```python
+import scipy.signal
+import scipy.misc
+import imageio
+import numpy as np
+import matplotlib.pyplot as plt
+
+input = scipy.misc.face().astype(float)/255
+input = input[300:600, 300:600, :]
+radius = 3
+amount = 0.5
+threshold = 0.1
+
+filtered_image = scipy.ndimage.gaussian_filter(input, radius)
+sharpened_image = input + amount*(input - filtered_image)
+mask = np.absolute(input - sharpened_image) > threshold
+sharpened_with_threshold = input * (1 - mask) + sharpened_image * mask
+combined_image = np.clip(np.concatenate([input,
+                                         sharpened_image,
+                                         mask,
+                                         sharpened_with_threshold], axis=0), 0, 1)
+
+imageio.imwrite('input.png', input)
+imageio.imwrite('sharpened_image.png', np.clip(sharpened_image, 0, 1))
+imageio.imwrite('mask.png', mask.astype(float))
+imageio.imwrite('sharpened_with_threshold.png', np.clip(sharpened_with_threshold, 0, 1))
+```
+
+
